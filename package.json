@@ -1,0 +1,27 @@
+{
+  "name": "sintropia-project",
+  "version": "1.0.0",
+  "description": "Sistema completo de agricultura sintrópica",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && go run cmd/api/main.go",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "cd frontend && npm install",
+    "start": "npm run dev"
+  },
+  "keywords": [
+    "agricultura-sintropica",
+    "ernst-gotsch",
+    "permacultura",
+    "go",
+    "react",
+    "typescript"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

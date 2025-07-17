@@ -1,0 +1,121 @@
+{
+  "name": "Sintropia Backend (Go 1.24)",
+  "dockerComposeFile": "../docker-compose.dev.yml",
+  "service": "backend-dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-json",
+        "ms-vscode.makefile-tools",
+        "golang.go-nightly"
+      ],
+      "settings": {
+        "go.useLanguageServer": true,
+        "go.gopath": "/go",
+        "go.goroot": "/usr/local/go",
+        "go.toolsManagement.checkForUpdates": "local",
+        "go.lintTool": "golangci-lint",
+        "go.formatTool": "goimports",
+        "go.testFlags": [
+          "-v"
+        ],
+        "go.buildFlags": [
+          "-v"
+        ],
+        "go.vetFlags": [
+          "-all"
+        ],
+        "go.delveConfig": {
+          "dlvLoadConfig": {
+            "followPointers": true,
+            "maxVariableRecurse": 1,
+            "maxStringLen": 64,
+            "maxArrayValues": 64,
+            "maxStructFields": -1
+          },
+          "apiVersion": 2,
+          "showGlobalVariables": true
+        },
+        "editor.formatOnSave": true,
+        "files.watcherExclude": {
+          "**/node_modules/**": true,
+          "**/tmp/**": true,
+          "**/.git/**": true,
+          "**/vendor/**": true
+        },
+        "go.gocodeAutoBuild": false,
+        "go.installDependenciesWhenBuilding": true
+      }
+    }
+  },
+  "forwardPorts": [
+    3000,
+    5432,
+    5050,
+    6060
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Backend API (Go 1.24)",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL Database",
+      "onAutoForward": "silent"
+    },
+    "5050": {
+      "label": "pgAdmin Web Interface",
+      "onAutoForward": "silent"
+    },
+    "6060": {
+      "label": "Go Debug Server",
+      "onAutoForward": "silent"
+    }
+  },
+  //"postCreateCommand": "chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh",
+  "postStartCommand": "echo '🚀 Backend devcontainer iniciado con Go 1.24. Para iniciar: make dev-backend'",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/go-cache,target=/go/pkg/mod,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.devcontainer/vscode-extensions,target=/home/vscode/.vscode-server/extensions,type=bind,consistency=cached"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    }
+  }
+}
+/*{
+  "name": "Sintronia Dev",
+  "build": {
+    "context": "..",
+    "dockerfile": "../backend/Dockerfile"
+  },
+  "workspaceFolder": "/app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "go.useLanguageServer": true
+      }
+    }
+  },
+  "forwardPorts": [3000]
+}
+*/

@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Backend",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/backend/cmd/api",
+            "env": {
+                "PORT": "8080",
+                "DB_HOST": "postgres",
+                "DB_PORT": "5432",
+                "DB_NAME": "sintropia",
+                "DB_USER": "sintropia_user",
+                "DB_PASSWORD": "sintropia_pass"
+            },
+            "args": [],
+            "showLog": true
+        }
+    ]
+}

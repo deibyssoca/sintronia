@@ -1,0 +1,79 @@
+services:
+  # Contenedor principal de desarrollo backend
+  backend-dev:
+    build: 
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - .:/workspace:cached
+      - go-modules:/go/pkg/mod
+      - vscode-extensions:/home/vscode/.vscode-server/extensions
+    command: sleep infinity
+    environment:
+      - PORT=3000
+      - GIN_MODE=debug
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sintropia
+      - DB_USER=sintropia_user
+      - DB_PASSWORD=sintropia_pass
+      - CORS_ALLOWED_ORIGINS=*
+      - CORS_ALLOW_ALL=true
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"   # Backend API
+    networks:
+      - sintropia-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: sintropia
+      POSTGRES_USER: sintropia_user
+      POSTGRES_PASSWORD: sintropia_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - sintropia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sintropia_user -d sintropia"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgAdmin (opcional para administrar la DB)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sintropia.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - sintropia-network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  go-modules:
+    driver: local
+  vscode-extensions:
+    driver: local
+
+networks:
+  sintropia-network:
+    driver: bridge
