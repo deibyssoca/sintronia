@@ -117,3 +117,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# VSCode devcontainer extensions
+.devcontainer/vscode-extensions/
