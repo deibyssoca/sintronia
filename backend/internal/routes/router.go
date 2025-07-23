@@ -162,16 +162,16 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		// Rutas públicas (sin autenticación)
 
-		plantas.GET("", handlers.GetPlantsHandler)
-		plantas.GET("/:id", handlers.GetPlantHandler)
+		plantas.GET("", handlers.GetPlantsSpeciesHandler)
+		plantas.GET("/:id", handlers.GetPlantSpeciesHandler)
 
 		// Rutas protegidas (con autenticación)
 		plantasAuth := plantas.Group("")
 		plantasAuth.Use(middleware.AuthMiddleware())
 		{
-			plantasAuth.POST("", handlers.CreatePlantHandler)
-			plantasAuth.PUT("/:id", handlers.UpdatePlantHandler)
-			plantasAuth.DELETE("/:id", handlers.DeletePlantHandler)
+			plantasAuth.POST("", handlers.CreatePlantSpeciesHandler)
+			plantasAuth.PUT("/:id", handlers.UpdatePlantSpeciesHandler)
+			plantasAuth.DELETE("/:id", handlers.DeletePlantSpeciesHandler)
 		}
 	}
 

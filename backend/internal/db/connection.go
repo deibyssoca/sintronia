@@ -74,10 +74,12 @@ func autoMigrate() error {
 	log.Println("🔄 Ejecutando auto-migraciones...")
 
 	err := DB.AutoMigrate(
-		&models.Plant{},
-		&models.Location{},
-		&models.Arrangement{},
-		&models.Planting{},
+		&models.Site{},
+		&models.Plantation{},
+		&models.PlantSpecies{},
+		&models.Plot{},
+		&models.PlantInstance{},
+		&models.SuggestionTemplate{},
 	)
 
 	if err != nil {

@@ -30,13 +30,13 @@ func getPlantRepo() *repositories.PlantRepository {
 	return plantRepo
 }
 
-// CreatePlantHandler maneja la creación de plantas
-func CreatePlantHandler(c *gin.Context) {
+// CreatePlantSpeciesHandler maneja la creación de especies de plantas
+func CreatePlantSpeciesHandler(c *gin.Context) {
 	// Obtener información del usuario autenticado con verificación
 	userID, exists := c.Get("user_id")
 	if exists && userID != nil {
 		c.Header("X-User-ID", strconv.FormatUint(uint64(userID.(int64)), 10))
-		log.Printf("Usuario %v creando planta", userID)
+		log.Printf("Usuario %v creando especie", userID)
 	}
 
 	userRole, exists := c.Get("user_role")
@@ -44,7 +44,7 @@ func CreatePlantHandler(c *gin.Context) {
 		c.Header("X-User-Role", userRole.(string))
 	}
 
-	var req models.CreatePlantRequest
+	var req models.CreatePlantSpeciesRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
@@ -55,33 +55,32 @@ func CreatePlantHandler(c *gin.Context) {
 	}
 
 	// Verificar si external_id ya existe (si se proporciona)
-	if req.ExternalID != "" {
-		exists, err := plantRepo.ExistsByExternalID(req.ExternalID)
+	if req.ExternalRef != "" {
+		exists, err := plantRepo.ExistsByExternalRef(req.ExternalRef)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.APIResponse{
 				Success: false,
-				Error:   "Error verificando external_id: " + err.Error(),
+				Error:   "Error verificando external_ref: " + err.Error(),
 			})
 			return
 		}
 		if exists {
 			c.JSON(http.StatusConflict, models.APIResponse{
 				Success: false,
-				Error:   "Ya existe una planta con ese external_id",
+				Error:   "Ya existe una planta con ese external_ref",
 			})
 			return
 		}
 	}
 
-	// Crear nueva planta
-	plant := models.Plant{
-		Name:            req.Name,
-		Scientific:      req.Scientific,
+	// Crear nueva planta especie
+	plant := models.PlantSpecies{
+		CommonName:      req.CommonName,
+		ScientificName:  req.ScientificName,
 		Stratum:         req.Stratum,
-		Function:        req.Function,
+		FunctionEcol:    req.FunctionEcol,
 		SuccessionStage: req.SuccessionStage,
-		ExternalID:      req.ExternalID,
-		Desired:         req.Desired,
+		ExternalRef:     req.ExternalRef,
 		Notes:           req.Notes,
 	}
 
@@ -104,7 +103,7 @@ func CreatePlantHandler(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Planta creada exitosamente: %s (ID: %d)", plant.Name, plant.ID)
+	log.Printf("Planta creada exitosamente: %s (ID: %d)", plant.CommonName, plant.ID)
 
 	// Respuesta exitosa
 	c.JSON(http.StatusCreated, models.APIResponse{
@@ -114,8 +113,8 @@ func CreatePlantHandler(c *gin.Context) {
 	})
 }
 
-// GetPlantsHandler maneja la obtención de todas las plantas
-func GetPlantsHandler(c *gin.Context) {
+// GetPlantsSpeciesHandler maneja la obtención de todas las plantas
+func GetPlantsSpeciesHandler(c *gin.Context) {
 	// Verificar que la base de datos esté disponible
 	repo := getPlantRepo()
 	if repo == nil {
@@ -153,17 +152,10 @@ func GetPlantsHandler(c *gin.Context) {
 	filters := repositories.PlantFilters{
 		Search:          c.Query("search"),
 		Stratum:         c.Query("stratum"),
-		Function:        c.Query("function"),
+		FunctionEcol:    c.Query("function_ecol"),
 		SuccessionStage: c.Query("succession_stage"),
 		Limit:           limit,
 		Offset:          (page - 1) * limit,
-	}
-
-	// Manejar filtro de desired
-	if desiredStr := c.Query("desired"); desiredStr != "" {
-		if desired, err := strconv.ParseBool(desiredStr); err == nil {
-			filters.Desired = &desired
-		}
 	}
 
 	// Obtener plantas de la base de datos
@@ -197,8 +189,8 @@ func GetPlantsHandler(c *gin.Context) {
 	})
 }
 
-// GetPlantHandler maneja la obtención de una planta específica
-func GetPlantHandler(c *gin.Context) {
+// GetPlantSpeciesHandler maneja la obtención de una planta específica
+func GetPlantSpeciesHandler(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
@@ -232,8 +224,8 @@ func GetPlantHandler(c *gin.Context) {
 	})
 }
 
-// UpdatePlantHandler maneja la actualización de una planta
-func UpdatePlantHandler(c *gin.Context) {
+// UpdatePlantSpeciesHandler maneja la actualización de una planta
+func UpdatePlantSpeciesHandler(c *gin.Context) {
 	// Obtener información del usuario autenticado con verificación
 	userID, exists := c.Get("user_id")
 	if exists && userID != nil {
@@ -254,7 +246,7 @@ func UpdatePlantHandler(c *gin.Context) {
 		return
 	}
 
-	var req models.UpdatePlantRequest
+	var req models.UpdatePlantSpeciesRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
@@ -267,26 +259,23 @@ func UpdatePlantHandler(c *gin.Context) {
 	// Construir mapa de actualizaciones
 	updates := make(map[string]interface{})
 
-	if req.Name != nil {
-		updates["name"] = *req.Name
+	if req.CommonName != nil {
+		updates["common_name"] = *req.CommonName
 	}
-	if req.Scientific != nil {
-		updates["scientific"] = *req.Scientific
+	if req.ScientificName != nil {
+		updates["scientific_name"] = *req.ScientificName
 	}
 	if req.Stratum != nil {
 		updates["stratum"] = *req.Stratum
 	}
-	if req.Function != nil {
-		updates["function"] = *req.Function
+	if req.FunctionEcol != nil {
+		updates["function_ecol"] = *req.FunctionEcol
 	}
 	if req.SuccessionStage != nil {
 		updates["succession_stage"] = *req.SuccessionStage
 	}
-	if req.ExternalID != nil {
-		updates["external_id"] = *req.ExternalID
-	}
-	if req.Desired != nil {
-		updates["desired"] = *req.Desired
+	if req.ExternalRef != nil {
+		updates["external_ref"] = *req.ExternalRef
 	}
 	if req.Notes != nil {
 		updates["notes"] = *req.Notes
@@ -331,8 +320,8 @@ func UpdatePlantHandler(c *gin.Context) {
 	})
 }
 
-// DeletePlantHandler maneja la eliminación de una planta
-func DeletePlantHandler(c *gin.Context) {
+// DeletePlantSpeciesHandler maneja la eliminación de una planta
+func DeletePlantSpeciesHandler(c *gin.Context) {
 	// Obtener información del usuario autenticado con verificación
 	userID, exists := c.Get("user_id")
 	if exists && userID != nil {

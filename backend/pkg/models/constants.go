@@ -1,14 +1,28 @@
 package models
 
-// Estratos de vegetación en agricultura sintrópica
+// Tipos de parcela
 const (
-	StratumEmergent = "emergente" // Árboles de gran porte (>25m)
-	StratumHigh     = "alto"      // Árboles medianos (15-25m)
-	StratumMedium   = "medio"     // Árboles pequeños y arbustos (5-15m)
-	StratumLow      = "bajo"      // Arbustos y herbáceas (1-5m)
-	StratumGround   = "rastrero"  // Cobertura del suelo (<1m)
-	StratumClimber  = "trepador"  // Plantas trepadoras
-	StratumRoot     = "raiz"      // Sistema radicular/tubérculos
+	PlotTypeLine   = "line"   // Líneas de plantación
+	PlotTypeIsland = "island" // Islas circulares
+	PlotTypeGuild  = "guild"  // Gremios de plantas
+)
+
+// Roles de plantas en el sistema sintrópico
+const (
+	PlantRoleObjetivo    = "objetivo"    // Planta objetivo (producción principal)
+	PlantRoleServicio    = "servicio"    // Planta de servicio (apoyo ecológico)
+	PlantRoleAcompañante = "acompañante" // Planta acompañante
+)
+
+// Estados de las instancias de plantas (simplificados y en inglés)
+const (
+	PlantStatusPlanned     = "planned"     // Planificada
+	PlantStatusGerminated  = "germinated"  // Germinada
+	PlantStatusPlanted     = "planted"     // Plantada
+	PlantStatusEstablished = "established" // Establecida
+	PlantStatusProductive  = "productive"  // Productiva
+	PlantStatusDormant     = "dormant"     // Dormante
+	PlantStatusDead        = "dead"        // Muerta
 )
 
 // Etapas sucesionales según Ernst Götsch
@@ -37,6 +51,17 @@ const (
 	FunctionOrnamental         = "ornamental"          // Valor estético
 )
 
+// Estratos de vegetación en agricultura sintrópica
+const (
+	StratumEmergent = "emergente" // Árboles de gran porte (>25m)
+	StratumHigh     = "alto"      // Árboles medianos (15-25m)
+	StratumMedium   = "medio"     // Árboles pequeños y arbustos (5-15m)
+	StratumLow      = "bajo"      // Arbustos y herbáceas (1-5m)
+	StratumGround   = "rastrero"  // Cobertura del suelo (<1m)
+	StratumClimber  = "trepador"  // Plantas trepadoras
+	StratumRoot     = "raiz"      // Sistema radicular/tubérculos
+)
+
 // Modalidades de plantación
 const (
 	PlantingModeSeed     = "semilla" // Siembra directa
@@ -58,13 +83,6 @@ const (
 	StatusDead        = "muerta"      // No viable
 )
 
-// Tipos de lecho de cultivo
-const (
-	ArrangementTypeLine   = "linea"  // Líneas de plantación
-	ArrangementTypeIsland = "isla"   // Islas circulares
-	ArrangementTypeGuild  = "gremio" // Gremios de plantas
-)
-
 // Tipos de suelo
 const (
 	SoilTypeArgiloso  = "argiloso"  // Arcilloso
@@ -75,19 +93,7 @@ const (
 	SoilTypeAnegadizo = "anegadizo" // Propenso a encharcamiento
 )
 
-// Funciones de validación
-func IsValidStratum(stratum string) bool {
-	validStrata := []string{
-		StratumEmergent, StratumHigh, StratumMedium,
-		StratumLow, StratumGround, StratumClimber, StratumRoot,
-	}
-	for _, v := range validStrata {
-		if v == stratum {
-			return true
-		}
-	}
-	return false
-}
+// Funciones de validación para el nuevo modelo
 
 // Etapas sucesionales según Ernst Götsch
 func IsValidSuccessionStage(stage string) bool {
@@ -97,6 +103,54 @@ func IsValidSuccessionStage(stage string) bool {
 	}
 	for _, v := range validStages {
 		if v == stage {
+			return true
+		}
+	}
+	return false
+}
+
+func IsValidPlotType(plotType string) bool {
+	validTypes := []string{PlotTypeLine, PlotTypeIsland, PlotTypeGuild}
+	for _, v := range validTypes {
+		if v == plotType {
+			return true
+		}
+	}
+	return false
+}
+
+func IsValidPlantRole(role string) bool {
+	validRoles := []string{PlantRoleObjetivo, PlantRoleServicio, PlantRoleAcompañante}
+	for _, v := range validRoles {
+		if v == role {
+			return true
+		}
+	}
+	return false
+}
+
+func IsValidPlantStatus(status string) bool {
+	validStatuses := []string{
+		PlantStatusPlanned, PlantStatusGerminated, PlantStatusPlanted,
+		PlantStatusEstablished, PlantStatusProductive, PlantStatusDormant, PlantStatusDead,
+	}
+	for _, v := range validStatuses {
+		if v == status {
+			return true
+		}
+	}
+	return false
+}
+
+// Mantener funciones de validación existentes para compatibilidad
+// (las funciones IsValidStratum, IsValidFunction, etc. se mantienen igual)
+func IsValidStratum(stratum string) bool {
+	validStrata := []string{
+		StratumEmergent, StratumHigh, StratumMedium,
+		StratumLow, StratumGround, StratumClimber, StratumRoot,
+	}
+	for _, v := range validStrata {
+		if v == stratum {
 			return true
 		}
 	}
@@ -139,16 +193,6 @@ func IsValidStatus(status string) bool {
 	}
 	for _, v := range validStatuses {
 		if v == status {
-			return true
-		}
-	}
-	return false
-}
-
-func IsValidArrangementType(arrangementType string) bool {
-	validTypes := []string{ArrangementTypeLine, ArrangementTypeIsland, ArrangementTypeGuild}
-	for _, v := range validTypes {
-		if v == arrangementType {
 			return true
 		}
 	}

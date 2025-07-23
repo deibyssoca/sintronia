@@ -89,59 +89,6 @@ EOF
     echo "✅ Creado backend/.env con configuración para Go 1.24"
 fi
 
-# Configuración de Air para hot reload del backend (optimizada para Go 1.24)
-if [ -d "backend" ] && [ ! -f "backend/.air.toml" ]; then
-    cat > backend/.air.toml << 'EOF'
-root = "."
-testdata_dir = "testdata"
-tmp_dir = "tmp"
-
-[build]
-  args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/api"
-  delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", ".git"]
-  exclude_file = []
-  exclude_regex = ["_test.go"]
-  exclude_unchanged = false
-  follow_symlink = false
-  full_bin = ""
-  include_dir = []
-  include_ext = ["go", "tpl", "tmpl", "html"]
-  kill_delay = "0s"
-  log = "build-errors.log"
-  send_interrupt = false
-  stop_on_root = false
-
-[color]
-  app = ""
-  build = "yellow"
-  main = "magenta"
-  runner = "green"
-  watcher = "cyan"
-
-[log]
-  time = false
-
-[misc]
-  clean_on_exit = false
-
-[screen]
-  clear_on_rebuild = false
-
-# Configuración específica para Go 1.24
-[env]
-  GO111MODULE = "on"
-  GOPROXY = "https://proxy.golang.org,direct"
-  GOSUMDB = "sum.golang.org"
-  PORT = "3000"
-  GIN_MODE = "debug"
-  CORS_ALLOW_ALL = "true"
-EOF
-    echo "✅ Creado backend/.air.toml para hot reload con Go 1.24"
-fi
-
 # Crear Makefile para comandos backend (actualizado para Go 1.24)
 if [ ! -f "Makefile.backend" ]; then
     cat > Makefile.backend << 'EOF'
@@ -170,8 +117,8 @@ go-version:
 
 # Desarrollo con hot reload
 dev:
-	@echo "🔧 Iniciando backend con hot reload (Go 1.24)..."
-	cd backend && air
+	@echo "🔧 Iniciando backend  (Go 1.24)..."
+	cd backend && go run ./cmd/api
 
 # Compilar backend
 build:

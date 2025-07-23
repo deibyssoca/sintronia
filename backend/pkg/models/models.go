@@ -8,173 +8,221 @@ import (
 	"gorm.io/gorm"
 )
 
-// Plant representa el inventario de plantas.
-// Los datos pueden provenir de la API de Permapeople o ingresarse manualmente.
-type Plant struct {
+// Site representa un sitio o terreno principal
+type Site struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	Name      string         `json:"name" gorm:"-:migration"`
+	AreaM2    float64        `json:"area_m2" gorm:"type:decimal(12,2)"` // Área total calculada
+	LengthM   float64        `json:"length_m" gorm:"type:decimal(10,2)"`
+	WidthM    float64        `json:"width_m" gorm:"type:decimal(10,2)"`
+	Notes     string         `json:"notes" gorm:"type:text"`
+	Climate   string         `json:"climate" gorm:"type:text"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
+
+	// Relaciones
+	Plantations []Plantation `json:"plantations,omitempty" gorm:"foreignKey:SiteID"`
+}
+
+// Validate valida los datos de un sitio
+func (s *Site) Validate() error {
+	if strings.TrimSpace(s.Name) == "" {
+		return errors.New("el nombre del sitio es requerido")
+	}
+
+	if s.AreaM2 < 0 {
+		return errors.New("el área no puede ser negativa")
+	}
+
+	if s.LengthM < 0 || s.WidthM < 0 {
+		return errors.New("las dimensiones no pueden ser negativas")
+	}
+
+	return nil
+}
+
+// CalculateArea calcula el área basada en longitud y ancho si no está definida
+func (s *Site) CalculateArea() float64 {
+	if s.AreaM2 > 0 {
+		return s.AreaM2
+	}
+	if s.LengthM > 0 && s.WidthM > 0 {
+		return s.LengthM * s.WidthM
+	}
+	return 0
+}
+
+// Plantation representa una plantación o zona de cultivo dentro de un sitio
+type Plantation struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	SiteID    uint           `json:"site_id" gorm:"not null;index"`
+	Name      string         `json:"name" gorm:"not null;-:migration"`
+	AreaM2    float64        `json:"area_m2" gorm:"type:decimal(12,2)"` // Área definida o calculada
+	Notes     string         `json:"notes" gorm:"type:text"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
+
+	// Relaciones
+	Site                Site                 `json:"site,omitempty" gorm:"foreignKey:SiteID"`
+	Plots               []Plot               `json:"plots,omitempty" gorm:"foreignKey:PlantationID"`
+	SuggestionTemplates []SuggestionTemplate `json:"suggestion_templates,omitempty" gorm:"foreignKey:PlantationID"`
+}
+
+// Validate valida los datos de una plantación
+func (p *Plantation) Validate() error {
+	if strings.TrimSpace(p.Name) == "" {
+		return errors.New("el nombre de la plantación es requerido")
+	}
+
+	if p.SiteID <= 0 {
+		return errors.New("el sitio es requerido")
+	}
+
+	if p.AreaM2 < 0 {
+		return errors.New("el área no puede ser negativa")
+	}
+
+	return nil
+}
+
+// PlantSpecies representa una especie de planta en el catálogo
+type PlantSpecies struct {
 	ID              uint           `json:"id" gorm:"primaryKey"`
-	Name            string         `json:"name" gorm:"not null;index"`
-	Scientific      string         `json:"scientific" gorm:"index"`
-	Stratum         string         `json:"stratum" gorm:"index"`               // Ej: "bajo", "medio", "alto"
-	Function        string         `json:"function" gorm:"index"`              // "objetivo" o "servicio"
-	SuccessionStage string         `json:"succession_stage" gorm:"index"`      // Ej: "pionera", "secundaria", "climax"
-	ExternalID      string         `json:"external_id" gorm:"uniqueIndex"`     // Referencia a la API externa
-	Desired         bool           `json:"desired" gorm:"default:false;index"` // Lista de plantas deseadas
+	CommonName      string         `json:"common_name" gorm:"not null;index;-:migration"`
+	ScientificName  string         `json:"scientific_name" gorm:"index;-:migration"`
+	Stratum         string         `json:"stratum" gorm:"type:varchar(50);index;-:migration"`             // Ej: "bajo", "medio", "alto"
+	FunctionEcol    string         `json:"function_ecol" gorm:"type:varchar(100);index;-:migration"`      // "objetivo" o "servicio"
+	SuccessionStage string         `json:"succession_stage" gorm:"type:varchar(50);index;-:migration"`    // Ej: "pionera", "secundaria", "climax"
+	ExternalRef     string         `json:"external_ref" gorm:"type:varchar(100);uniqueIndex;-:migration"` // Referencia a la API externa
 	Notes           string         `json:"notes" gorm:"type:text"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
 
 	// Relaciones
-	Plantings []Planting `json:"plantings,omitempty" gorm:"foreignKey:PlantID"`
+	PlantInstances []PlantInstance `json:"plant_instances,omitempty" gorm:"foreignKey:SpeciesID"`
 }
 
-// Validate valida los datos de una planta
-func (p *Plant) Validate() error {
-	if strings.TrimSpace(p.Name) == "" {
-		return errors.New("el nombre de la planta es requerido")
+// Validate valida los datos de una especie de planta
+func (ps *PlantSpecies) Validate() error {
+	if strings.TrimSpace(ps.CommonName) == "" {
+		return errors.New("el nombre común de la especie es requerido")
 	}
 
-	if p.Stratum != "" && !IsValidStratum(p.Stratum) {
+	if ps.Stratum != "" && !IsValidStratum(ps.Stratum) {
 		return errors.New("estrato inválido")
 	}
 
-	if p.Function != "" && !IsValidFunction(p.Function) {
-		return errors.New("función inválida")
+	if ps.FunctionEcol != "" && !IsValidFunction(ps.FunctionEcol) {
+		return errors.New("función ecológica inválida")
 	}
 
-	if p.SuccessionStage != "" && !IsValidSuccessionStage(p.SuccessionStage) {
+	if ps.SuccessionStage != "" && !IsValidSuccessionStage(ps.SuccessionStage) {
 		return errors.New("etapa sucesional inválida")
 	}
 
 	return nil
 }
 
-// Location representa una zona o área para el inventario (sin geolocalización por ahora).
-type Location struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	Name      string         `json:"name" gorm:"not null;uniqueIndex"`
-	Notes     string         `json:"notes,omitempty" gorm:"type:text"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
-
-	// Relaciones
-	Arrangements []Arrangement `json:"arrangements,omitempty" gorm:"foreignKey:LocationID"`
-}
-
-// Validate valida los datos de una ubicación
-func (l *Location) Validate() error {
-	if strings.TrimSpace(l.Name) == "" {
-		return errors.New("el nombre de la ubicación es requerido")
-	}
-	return nil
-}
-
-// Arrangement representa la disposición de cultivo, que puede ser lineal (línea) o circular (isla).
-type Arrangement struct {
+// Plot representa una parcela o lecho de cultivo
+type Plot struct {
 	ID           uint           `json:"id" gorm:"primaryKey"`
-	Name         string         `json:"name" gorm:"not null"`
-	LocationID   uint           `json:"location_id" gorm:"not null;index"`
-	Type         string         `json:"type" gorm:"not null;index"` // "linea", "isla", "gremio"
-	Length       float64        `json:"length,omitempty"`           // Solo para líneas
-	Width        float64        `json:"width,omitempty"`            // Solo para líneas
-	Diameter     float64        `json:"diameter,omitempty"`         // Solo para islas
-	SoilType     string         `json:"soil_type" gorm:"index"`
-	PlantingMode string         `json:"planting_mode" gorm:"index"` // Modalidad de plantación
-	Notes        string         `json:"notes,omitempty" gorm:"type:text"`
+	PlantationID uint           `json:"plantation_id" gorm:"not null;index"`
+	PlotType     string         `json:"plot_type" gorm:"type:varchar(50);not null;index;-:migration"` // "line", "island", "guild"
+	LengthM      float64        `json:"length_m" gorm:"type:decimal(10,2)"`                           // Solo para líneas
+	WidthM       float64        `json:"width_m" gorm:"type:decimal(10,2)"`                            // Solo para líneas
+	DiameterM    float64        `json:"diameter_m" gorm:"type:decimal(10,2)"`                         // Solo para islas
+	Geometry     string         `json:"geometry" gorm:"type:text"`                                    // GeoJSON opcional
+	Notes        string         `json:"notes" gorm:"type:text"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
 
 	// Relaciones
-	Location  Location   `json:"location,omitempty" gorm:"foreignKey:LocationID"`
-	Plantings []Planting `json:"plantings,omitempty" gorm:"foreignKey:ArrangementID"`
+	Plantation     Plantation      `json:"plantation,omitempty" gorm:"foreignKey:PlantationID"`
+	PlantInstances []PlantInstance `json:"plant_instances,omitempty" gorm:"foreignKey:PlotID"`
 }
 
-// Validate valida los datos de un lecho
-func (b *Arrangement) Validate() error {
-	if strings.TrimSpace(b.Name) == "" {
-		return errors.New("el nombre del lecho es requerido")
+// Validate valida los datos de una parcela
+func (p *Plot) Validate() error {
+	if p.PlantationID <= 0 {
+		return errors.New("la plantación es requerida")
 	}
 
-	if b.LocationID <= 0 {
-		return errors.New("la ubicación es requerida")
-	}
-
-	if !IsValidArrangementType(b.Type) {
-		return errors.New("tipo de lecho inválido")
+	if !IsValidPlotType(p.PlotType) {
+		return errors.New("tipo de parcela inválido")
 	}
 
 	// Validaciones específicas por tipo
-	switch b.Type {
-	case ArrangementTypeLine:
-		if b.Length <= 0 || b.Width <= 0 {
+	switch p.PlotType {
+	case PlotTypeLine:
+		if p.LengthM <= 0 || p.WidthM <= 0 {
 			return errors.New("las líneas requieren longitud y ancho válidos")
 		}
-	case ArrangementTypeIsland:
-		if b.Diameter <= 0 {
+	case PlotTypeIsland:
+		if p.DiameterM <= 0 {
 			return errors.New("las islas requieren un diámetro válido")
 		}
-	}
-
-	if b.SoilType != "" && !IsValidSoilType(b.SoilType) {
-		return errors.New("tipo de suelo inválido")
-	}
-
-	if b.PlantingMode != "" && !IsValidPlantingMode(b.PlantingMode) {
-		return errors.New("modalidad de plantación inválida")
 	}
 
 	return nil
 }
 
-// CalculateArea calcula el área del lecho en metros cuadrados
-func (b *Arrangement) CalculateArea() float64 {
-	switch b.Type {
-	case ArrangementTypeLine:
-		return b.Length * b.Width
-	case ArrangementTypeIsland:
-		radius := b.Diameter / 2
+// CalculateArea calcula el área de la parcela en metros cuadrados
+func (p *Plot) CalculateArea() float64 {
+	switch p.PlotType {
+	case PlotTypeLine:
+		return p.LengthM * p.WidthM
+	case PlotTypeIsland:
+		radius := p.DiameterM / 2
 		return 3.14159 * radius * radius
 	default:
 		return 0
 	}
 }
 
-// Planting vincula una planta a un lecho de cultivo.
-type Planting struct {
-	ID            uint           `json:"id" gorm:"primaryKey"`
-	ArrangementID uint           `json:"arrangement_id" gorm:"not null;index"`
-	PlantID       uint           `json:"plant_id" gorm:"not null;index"`
-	Quantity      int            `json:"quantity" gorm:"not null;check:quantity > 0"` // Puede haber varias instancias de la misma planta
-	Status        string         `json:"status" gorm:"not null;index"`                // Ej: "planeada", "en germinacion", "plantada", etc.
-	Position      string         `json:"position,omitempty"`                          // Valor o descripción para la sugerencia textual
-	Notes         string         `json:"notes,omitempty" gorm:"type:text"`
-	PlantedAt     *time.Time     `json:"planted_at,omitempty"` // Fecha de plantación
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
+// PlantInstance representa una instancia específica de plantas en una parcela
+type PlantInstance struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	PlotID    uint           `json:"plot_id" gorm:"not null;index"`
+	SpeciesID uint           `json:"species_id" gorm:"not null;index"`
+	Quantity  int            `json:"quantity" gorm:"not null;check:quantity > 0;-:migration"`
+	Role      string         `json:"role" gorm:"type:varchar(50);index;-:migration"`            // "objetivo", "servicio", "acompañante"
+	Status    string         `json:"status" gorm:"type:varchar(50);not null;index;-:migration"` // "planned", "germinated", "planted", etc.
+	Position  string         `json:"position" gorm:"type:text;-:migration"`                     // GeoJSON o descripción textual
+	Order     int            `json:"order" gorm:"not null;-:migration"`
+	PlantedAt *time.Time     `json:"planted_at" gorm:"type:date"` // Fecha de plantación
+	Notes     string         `json:"notes" gorm:"type:text"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
 
 	// Relaciones
-	Arrangement Arrangement `json:"arrangement,omitempty" gorm:"foreignKey:ArrangementID"`
-	Plant       Plant       `json:"plant,omitempty" gorm:"foreignKey:PlantID"`
+	Plot    Plot         `json:"plot,omitempty" gorm:"foreignKey:PlotID"`
+	Species PlantSpecies `json:"species,omitempty" gorm:"foreignKey:SpeciesID"`
 }
 
-// Validate valida los datos de una plantación
-func (p *Planting) Validate() error {
-	if p.ArrangementID <= 0 {
-		return errors.New("el lecho es requerido")
+// Validate valida los datos de una instancia de planta
+func (pi *PlantInstance) Validate() error {
+	if pi.PlotID <= 0 {
+		return errors.New("la parcela es requerida")
 	}
 
-	if p.PlantID <= 0 {
-		return errors.New("la planta es requerida")
+	if pi.SpeciesID <= 0 {
+		return errors.New("la especie es requerida")
 	}
 
-	if p.Quantity <= 0 {
+	if pi.Quantity <= 0 {
 		return errors.New("la cantidad debe ser mayor a cero")
 	}
 
-	if !IsValidStatus(p.Status) {
+	if pi.Role != "" && !IsValidPlantRole(pi.Role) {
+		return errors.New("rol de planta inválido")
+	}
+
+	if !IsValidPlantStatus(pi.Status) {
 		return errors.New("estado inválido")
 	}
 
@@ -182,14 +230,42 @@ func (p *Planting) Validate() error {
 }
 
 // CalculateDensity calcula la densidad de plantación (plantas por m²)
-func (p *Planting) CalculateDensity(arrangementArea float64) float64 {
-	if arrangementArea <= 0 {
+func (pi *PlantInstance) CalculateDensity(plotArea float64) float64 {
+	if plotArea <= 0 {
 		return 0
 	}
-	return float64(p.Quantity) / arrangementArea
+	return float64(pi.Quantity) / plotArea
 }
 
-// Estructuras para respuestas de API
+// SuggestionTemplate representa una plantilla de sugerencias para plantaciones
+type SuggestionTemplate struct {
+	ID           uint           `json:"id" gorm:"primaryKey"`
+	PlantationID uint           `json:"plantation_id" gorm:"not null;index"`
+	Name         string         `json:"name" gorm:"not null"`
+	Description  string         `json:"description" gorm:"type:text"`
+	Rules        string         `json:"rules" gorm:"type:jsonb"` // Reglas JSON para densidad, estrato, sucesión
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
+
+	// Relaciones
+	Plantation Plantation `json:"plantation,omitempty" gorm:"foreignKey:PlantationID"`
+}
+
+// Validate valida los datos de una plantilla de sugerencias
+func (st *SuggestionTemplate) Validate() error {
+	if strings.TrimSpace(st.Name) == "" {
+		return errors.New("el nombre de la plantilla es requerido")
+	}
+
+	if st.PlantationID <= 0 {
+		return errors.New("la plantación es requerida")
+	}
+
+	return nil
+}
+
+// Estructuras para respuestas de API (mantenemos compatibilidad)
 type APIResponse struct {
 	Success bool        `json:"success"`
 	Data    interface{} `json:"data,omitempty"`
@@ -211,51 +287,73 @@ type Pagination struct {
 	TotalPages int   `json:"total_pages"`
 }
 
-// Estructuras para requests
-type CreatePlantRequest struct {
-	Name            string `json:"name" binding:"required"`
-	Scientific      string `json:"scientific"`
+// Estructuras para requests del nuevo modelo
+type CreateSiteRequest struct {
+	Name    string  `json:"name" binding:"required"`
+	AreaM2  float64 `json:"area_m2"`
+	LengthM float64 `json:"length_m"`
+	WidthM  float64 `json:"width_m"`
+	Notes   string  `json:"notes"`
+}
+
+type UpdateSiteRequest struct {
+	Name    *string  `json:"name"`
+	AreaM2  *float64 `json:"area_m2"`
+	LengthM *float64 `json:"length_m"`
+	WidthM  *float64 `json:"width_m"`
+	Notes   *string  `json:"notes"`
+}
+
+type CreatePlantationRequest struct {
+	SiteID uint    `json:"site_id" binding:"required"`
+	Name   string  `json:"name" binding:"required"`
+	AreaM2 float64 `json:"area_m2"`
+	Notes  string  `json:"notes"`
+}
+
+type CreatePlantSpeciesRequest struct {
+	CommonName      string `json:"common_name" binding:"required"`
+	ScientificName  string `json:"scientific_name"`
 	Stratum         string `json:"stratum"`
-	Function        string `json:"function"`
+	FunctionEcol    string `json:"function_ecol"`
 	SuccessionStage string `json:"succession_stage"`
-	ExternalID      string `json:"external_id"`
-	Desired         bool   `json:"desired"`
+	ExternalRef     string `json:"external_ref"`
 	Notes           string `json:"notes"`
 }
 
-type UpdatePlantRequest struct {
-	Name            *string `json:"name"`
-	Scientific      *string `json:"scientific"`
+type UpdatePlantSpeciesRequest struct {
+	CommonName      *string `json:"common_name"`
+	ScientificName  *string `json:"scientific_name"`
 	Stratum         *string `json:"stratum"`
-	Function        *string `json:"function"`
+	FunctionEcol    *string `json:"function_ecol"`
 	SuccessionStage *string `json:"succession_stage"`
-	ExternalID      *string `json:"external_id"`
-	Desired         *bool   `json:"desired"`
+	ExternalRef     *string `json:"external_ref"`
 	Notes           *string `json:"notes"`
 }
 
-type CreateLocationRequest struct {
-	Name  string `json:"name" binding:"required"`
-	Notes string `json:"notes"`
-}
-
-type CreateArrangementRequest struct {
-	Name         string  `json:"name" binding:"required"`
-	LocationID   uint    `json:"location_id" binding:"required"`
-	Type         string  `json:"type" binding:"required"`
-	Length       float64 `json:"length"`
-	Width        float64 `json:"width"`
-	Diameter     float64 `json:"diameter"`
-	SoilType     string  `json:"soil_type"`
-	PlantingMode string  `json:"planting_mode"`
+type CreatePlotRequest struct {
+	PlantationID uint    `json:"plantation_id" binding:"required"`
+	PlotType     string  `json:"plot_type" binding:"required"`
+	LengthM      float64 `json:"length_m"`
+	WidthM       float64 `json:"width_m"`
+	DiameterM    float64 `json:"diameter_m"`
+	Geometry     string  `json:"geometry"`
 	Notes        string  `json:"notes"`
 }
 
-type CreatePlantingRequest struct {
-	ArrangementID uint   `json:"arrangement_id" binding:"required"`
-	PlantID       uint   `json:"plant_id" binding:"required"`
-	Quantity      int    `json:"quantity" binding:"required,min=1"`
-	Status        string `json:"status" binding:"required"`
-	Position      string `json:"position"`
-	Notes         string `json:"notes"`
+type CreatePlantInstanceRequest struct {
+	PlotID    uint   `json:"plot_id" binding:"required"`
+	SpeciesID uint   `json:"species_id" binding:"required"`
+	Quantity  int    `json:"quantity" binding:"required,min=1"`
+	Role      string `json:"role"`
+	Status    string `json:"status" binding:"required"`
+	Position  string `json:"position"`
+	Notes     string `json:"notes"`
+}
+
+type CreateSuggestionTemplateRequest struct {
+	PlantationID uint   `json:"plantation_id" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	Description  string `json:"description"`
+	Rules        string `json:"rules"` // JSON string
 }

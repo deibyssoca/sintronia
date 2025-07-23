@@ -58,11 +58,6 @@ func GetConstantsHandler(c *gin.Context) {
 			models.StatusDormant,
 			models.StatusDead,
 		},
-		"tipos_lecho": []string{
-			models.ArrangementTypeLine,
-			models.ArrangementTypeIsland,
-			models.ArrangementTypeGuild,
-		},
 		"tipos_suelo": []string{
 			models.SoilTypeArgiloso,
 			models.SoilTypeArenoso,
@@ -70,6 +65,11 @@ func GetConstantsHandler(c *gin.Context) {
 			models.SoilTypeHumifero,
 			models.SoilTypePedregoso,
 			models.SoilTypeAnegadizo,
+		},
+		"tipo_de_parcela": []string{
+			models.PlotTypeLine,
+			models.PlotTypeIsland,
+			models.PlotTypeGuild,
 		},
 	}
 

@@ -26,7 +26,7 @@ func NewPlantRepository() *PlantRepository {
 }
 
 // Create crea una nueva planta
-func (r *PlantRepository) Create(plant *models.Plant) error {
+func (r *PlantRepository) Create(plant *models.PlantSpecies) error {
 	if err := r.db.Create(plant).Error; err != nil {
 		return fmt.Errorf("error creando planta: %w", err)
 	}
@@ -34,32 +34,28 @@ func (r *PlantRepository) Create(plant *models.Plant) error {
 }
 
 // GetAll obtiene todas las plantas con filtros opcionales
-func (r *PlantRepository) GetAll(filters PlantFilters) ([]models.Plant, int64, error) {
-	var plants []models.Plant
+func (r *PlantRepository) GetAll(filters PlantFilters) ([]models.PlantSpecies, int64, error) {
+	var plants []models.PlantSpecies
 	var total int64
 
-	query := r.db.Model(&models.Plant{})
+	query := r.db.Model(&models.PlantSpecies{})
 
 	// Aplicar filtros
 	if filters.Search != "" {
 		searchTerm := "%" + filters.Search + "%"
-		query = query.Where("name ILIKE ? OR scientific ILIKE ?", searchTerm, searchTerm)
+		query = query.Where("common_name ILIKE ? OR scientific_name ILIKE ?", searchTerm, searchTerm)
 	}
 
 	if filters.Stratum != "" {
 		query = query.Where("stratum = ?", filters.Stratum)
 	}
 
-	if filters.Function != "" {
-		query = query.Where("function = ?", filters.Function)
+	if filters.FunctionEcol != "" {
+		query = query.Where("function_ecol = ?", filters.FunctionEcol)
 	}
 
 	if filters.SuccessionStage != "" {
 		query = query.Where("succession_stage = ?", filters.SuccessionStage)
-	}
-
-	if filters.Desired != nil {
-		query = query.Where("desired = ?", *filters.Desired)
 	}
 
 	// Contar total antes de paginación
@@ -88,8 +84,8 @@ func (r *PlantRepository) GetAll(filters PlantFilters) ([]models.Plant, int64, e
 }
 
 // GetByID obtiene una planta por ID
-func (r *PlantRepository) GetByID(id uint) (*models.Plant, error) {
-	var plant models.Plant
+func (r *PlantRepository) GetByID(id uint) (*models.PlantSpecies, error) {
+	var plant models.PlantSpecies
 
 	if err := r.db.First(&plant, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -102,8 +98,8 @@ func (r *PlantRepository) GetByID(id uint) (*models.Plant, error) {
 }
 
 // Update actualiza una planta
-func (r *PlantRepository) Update(id uint, updates map[string]interface{}) (*models.Plant, error) {
-	var plant models.Plant
+func (r *PlantRepository) Update(id uint, updates map[string]interface{}) (*models.PlantSpecies, error) {
+	var plant models.PlantSpecies
 
 	// Verificar que la planta existe
 	if err := r.db.First(&plant, id).Error; err != nil {
@@ -129,7 +125,7 @@ func (r *PlantRepository) Update(id uint, updates map[string]interface{}) (*mode
 // Delete elimina una planta (soft delete)
 func (r *PlantRepository) Delete(id uint) error {
 	// Verificar que la planta existe
-	var plant models.Plant
+	var plant models.PlantSpecies
 	if err := r.db.First(&plant, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("planta no encontrada")
@@ -138,14 +134,14 @@ func (r *PlantRepository) Delete(id uint) error {
 	}
 
 	// Verificar que no esté siendo usada en plantaciones
-	var plantingCount int64
-	if err := r.db.Model(&models.Planting{}).Where("plant_id = ?", id).Count(&plantingCount).Error; err != nil {
-		return fmt.Errorf("error verificando plantaciones: %w", err)
-	}
+	// var plantingCount int64
+	// if err := r.db.Model(&models.Planting{}).Where("plant_id = ?", id).Count(&plantingCount).Error; err != nil {
+	// 	return fmt.Errorf("error verificando plantaciones: %w", err)
+	// }
 
-	if plantingCount > 0 {
-		return fmt.Errorf("no se puede eliminar la planta porque está siendo usada en %d plantaciones", plantingCount)
-	}
+	// if plantingCount > 0 {
+	// 	return fmt.Errorf("no se puede eliminar la planta porque está siendo usada en %d plantaciones", plantingCount)
+	// }
 
 	// Soft delete
 	if err := r.db.Delete(&plant).Error; err != nil {
@@ -155,15 +151,15 @@ func (r *PlantRepository) Delete(id uint) error {
 	return nil
 }
 
-// ExistsByExternalID verifica si existe una planta con el external_id dado
-func (r *PlantRepository) ExistsByExternalID(externalID string) (bool, error) {
-	if externalID == "" {
+// ExistsByExternalRef verifica si existe una planta con el external_id dado
+func (r *PlantRepository) ExistsByExternalRef(externalRef string) (bool, error) {
+	if externalRef == "" {
 		return false, nil
 	}
 
 	var count int64
-	if err := r.db.Model(&models.Plant{}).Where("external_id = ?", externalID).Count(&count).Error; err != nil {
-		return false, fmt.Errorf("error verificando external_id: %w", err)
+	if err := r.db.Model(&models.PlantSpecies{}).Where("external_ref = ?", externalRef).Count(&count).Error; err != nil {
+		return false, fmt.Errorf("error verificando external_ref: %w", err)
 	}
 
 	return count > 0, nil
@@ -173,9 +169,8 @@ func (r *PlantRepository) ExistsByExternalID(externalID string) (bool, error) {
 type PlantFilters struct {
 	Search          string
 	Stratum         string
-	Function        string
+	FunctionEcol    string
 	SuccessionStage string
-	Desired         *bool
 	Limit           int
 	Offset          int
 }

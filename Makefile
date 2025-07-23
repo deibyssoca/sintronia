@@ -23,8 +23,8 @@ dev:
 
 # Solo backend
 dev-backend:
-	@echo "🔧 Iniciando backend con hot reload..."
-	cd backend && air
+	@echo "🔧 Iniciando backend ..."
+	cd backend && go run ./cmd/api
 
 # Solo frontend  
 dev-frontend:
@@ -50,7 +50,7 @@ clean:
 install:
 	@echo "📦 Instalando dependencias..."
 	cd backend && go mod tidy && go mod download
-	cd frontend && npm install
+# 	cd frontend && npm install
 
 # Ejecutar tests
 test:
