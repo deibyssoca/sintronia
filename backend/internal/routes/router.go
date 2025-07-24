@@ -78,7 +78,7 @@ func NewRouter() *gin.Engine {
 		// // Establece un tiempo de vida para la configuración de CORS
 		// MaxAge: 12 * time.Hour,
 	}))
-	// Puedes aplicar el AuthMiddleware globalmente si lo considerás necesario,
+	// Aplicar el AuthMiddleware globalmente si se considera necesario,
 	// o solo en rutas específicas
 	// router.Use(middleware.AuthMiddleware())
 

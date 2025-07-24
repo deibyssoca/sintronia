@@ -32,6 +32,18 @@ func getPlantRepo() *repositories.PlantRepository {
 
 // CreatePlantSpeciesHandler maneja la creación de especies de plantas
 func CreatePlantSpeciesHandler(c *gin.Context) {
+
+	// Obtén el repositorio a través de getPlantRepo()
+	repo := getPlantRepo()
+	if repo == nil {
+		c.JSON(http.StatusServiceUnavailable, models.APIResponse{
+			Success: false,
+			Error:   "Base de datos no disponible",
+			Message: "El servicio está funcionando en modo limitado",
+		})
+		return
+	}
+
 	// Obtener información del usuario autenticado con verificación
 	userID, exists := c.Get("user_id")
 	if exists && userID != nil {
