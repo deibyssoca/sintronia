@@ -4,89 +4,115 @@
 
 ```mermaid
 erDiagram
-    LOCATION {
-        uint id PK
-        string name UK "UNIQUE"
-        string notes
+    %% Entidades principales
+    SITE {
+        uint    id PK
+        string  name
+        float   area_m2     "área total calculada"
+        float   length_m
+        float   width_m
+        string  notes
         timestamp created_at
         timestamp updated_at
-        timestamp deleted_at "soft delete"
     }
-    
-    ARRANGEMENT {
-        uint id PK
-        uint location_id FK
-        string name
-        string type "linea, isla, gremio"
-        float64 length "solo para líneas"
-        float64 width "solo para líneas"
-        float64 diameter "solo para islas"
-        string soil_type
-        string planting_mode
-        string notes
+
+    PLANTATION {
+        uint    id PK
+        uint    site_id FK
+        string  name
+        float   area_m2     "área definida o calculada"
+        string  notes
         timestamp created_at
         timestamp updated_at
-        timestamp deleted_at "soft delete"
     }
-    
-    PLANT {
-        uint id PK
-        string name
-        string scientific
-        string stratum "emergente, alto, medio, bajo, rastrero, trepador, raiz"
-        string function "fijador_nitrogeno, acumulador_dinamico, etc"
-        string succession_stage "placenta, pionera, secundaria, climax"
-        string external_id UK "UNIQUE - referencia API externa"
-        bool desired "lista de plantas deseadas"
-        string notes
+
+    PLOT {
+        uint    id PK
+        uint    plantation_id FK
+        enum    plot_type   "line, island, guild"
+        float   length_m    "para líneas"
+        float   width_m     "para líneas"
+        float   diameter_m  "para islas"
+        string  geometry    "GeoJSON opcional (PostGIS)"
         timestamp created_at
         timestamp updated_at
-        timestamp deleted_at "soft delete"
     }
-    
-    PLANTING {
-        uint id PK
-        uint arrangement_id FK
-        uint plant_id FK
-        int quantity "cantidad de plantas"
-        string status "planeada, germinacion, plantada, etc"
-        string position "descripción de posición"
-        string notes
-        timestamp planted_at "fecha de plantación"
+
+    PLANT_SPECIES {
+        uint    id PK
+        string  common_name
+        string  scientific_name
+        enum    stratum            "emergente, alto, medio, ..."
+        enum    function_ecol      "fijador, acumulador, ..."
+        enum    succession_stage   "pionera, secundaria, ..."
+        string  external_ref       "ID en API externa"
         timestamp created_at
         timestamp updated_at
-        timestamp deleted_at "soft delete"
     }
-    
+
+    PLANT_INSTANCE {
+        uint    id PK
+        uint    plot_id FK
+        uint    species_id FK
+        int     quantity
+        enum    role               "objetivo, servicio, acompañante"
+        enum    status             "planeada, germinada, plantada, desarrollada, muerta, eliminada, podada"
+        string  position           "GeoJSON o descripción"
+        date    planted_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SUGGESTION_TEMPLATE {
+        uint    id PK
+        uint    plantation_id FK
+        string  name
+        string  description
+        json    rules              "reglas de densidad, estrato, sucesión"
+        timestamp created_at
+        timestamp updated_at
+    }
+
     %% Relaciones
-    LOCATION ||--o{ ARRANGEMENT : "tiene múltiples"
-    ARRANGEMENT ||--o{ PLANTING : "contiene"
-    PLANT ||--o{ PLANTING : "se planta en"
+    SITE          ||--o{ PLANTATION          : "tiene"
+    PLANTATION   ||--o{ PLOT                 : "define"
+    PLOT         ||--o{ PLANT_INSTANCE       : "contiene"
+    PLANT_SPECIES||--o{ PLANT_INSTANCE       : "especie de"
+    PLANTATION   ||--o{ SUGGESTION_TEMPLATE  : "ofrece"
 ```
 
 ## 🔄 Diagrama de Flujo de Proceso
 
 ```mermaid
-graph TD
-    A[Crear Location] --> B[Crear Arrangement]
-    C[Agregar Plant al catálogo] --> D[Crear Planting]
-    B --> D
-    
-    D --> E{Qué tipo de Arrangement?}
-    E -->|Línea| F[Calcular área: length × width]
-    E -->|Isla| G[Calcular área: π × diameter/2²]
-    E -->|Gremio| H[Área variable]
-    
-    F --> I[Calcular densidad]
-    G --> I
-    H --> I
-    
-    I --> J[Generar reportes]
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
+flowchart TD
+    A[Crear Sitio ] --> B[Crear Plantación ]
+    B --> C[Agregar Parcelas sintrópicas]
+    C --> D[Insertar Plantas a mano ]
+    C --> E[Aplicar Sugerencia automática]
+    E --> F[Generar distribución sugerida]
+    F --> G[Insertar plantas sugeridas]
+    D --> H[Visualizar o Editar plantación]
+    G --> H
+    H --> I[Guardar o Ejecutar siembra]
+
+    subgraph Base de Datos
+        A
+        B
+        C
+        D
+        E
+        G
+    end
+
+    style A fill:#bbf,stroke:#333,stroke-width:1px
+    style B fill:#bbf,stroke:#333,stroke-width:1px
+    style C fill:#cfc,stroke:#333,stroke-width:1px
+    style D fill:#ffd,stroke:#333,stroke-width:1px
+    style E fill:#ffd,stroke:#333,stroke-width:1px
+    style F fill:#eef,stroke:#333,stroke-width:1px
+    style G fill:#bbf,stroke:#333,stroke-width:1px
+    style H fill:#ccc,stroke:#333,stroke-width:1px
+    style I fill:#faa,stroke:#333,stroke-width:1px
 ```
 
 ## 🎯 Diagrama de Estados de Plantación
@@ -147,23 +173,4 @@ mindmap
       Línea
       Isla
       Gremio
-```
-
-## 🚀 Para visualizar estos diagramas:
-
-### **Opción 1: GitHub/GitLab**
-- Los archivos `.md` con Mermaid se renderizan automáticamente
-
-### **Opción 2: Mermaid Live Editor**
-- Ir a: https://mermaid.live/
-- Copiar y pegar el código Mermaid
-
-### **Opción 3: VS Code**
-- Instalar extensión "Mermaid Preview"
-- Abrir archivo `.md` y usar preview
-
-### **Opción 4: Generar PNG con Python**
-```bash
-pip install graphviz
-python docs/generate-diagram.py
 ```

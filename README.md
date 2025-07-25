@@ -1,6 +1,6 @@
-# 🌱 Sintropia - Sistema de Agricultura Sintrópica
+# 🌱 Sintronia - Sistema de Agricultura Sintrópica
 
-Sistema completo para la gestión y planificación de proyectos de agricultura sintrópica, inspirado en los principios de Ernst Götsch.
+Sistema completo para la gestión y planificación de proyectos de agricultura sintrópica.
 
 ## 🏗️ Arquitectura
 
@@ -12,18 +12,25 @@ Este proyecto está dividido en dos aplicaciones independientes:
 ```
 sintropia/
 ├── backend/          # API REST en Go
-│   ├── cmd/api/      # Punto de entrada
-│   ├── internal/     # Lógica interna
-│   └── pkg/          # Modelos y utilidades
-└── frontend/         # App React
-    ├── src/          # Código fuente
-    └── public/       # Archivos estáticos
+│   ├── cmd/api/          # Punto de entrada
+│   ├── internal/         # Código interno
+│   │   ├── db/           # Conexión a la BD
+│   │   ├── handlers/     # Controladores HTTP
+│   │   ├── middleware/   # Middleware personalizado
+│   │   ├── repositories/ # Repos
+│   │   └── routes/       # Configuración de rutas
+│   ├── migrations/       # Código reutilizable
+│   ├── pkg/              # Código reutilizable
+│   │    └── models/      # Modelos de datos
+│   docs/                 # Documentos
+│
+├── frontend/          # Aplicación web en React con TypeScript
 ```
 
 ## 🚀 Inicio Rápido
 
 ### Prerrequisitos
-- **Go 1.21+** para el backend
+- **Go 1.24+** para el backend
 - **Node.js 18+** para el frontend
 
 ### Desarrollo Local
@@ -31,7 +38,7 @@ sintropia/
 1. **Clonar el repositorio**
 ```bash
 git clone <repo-url>
-cd sintropia
+cd sintronia
 ```
 
 2. **Iniciar Backend**
@@ -39,7 +46,7 @@ cd sintropia
 cd backend
 go mod tidy
 go run cmd/api/main.go
-# Servidor corriendo en http://localhost:8080
+# Servidor corriendo en http://localhost:3000
 ```
 
 3. **Iniciar Frontend** (en otra terminal)
@@ -56,28 +63,25 @@ npm run dev
 # Iniciar todo el stack
 docker-compose up -d
 
-# Backend: http://localhost:8080
+# Backend: http://localhost:3000
 # Frontend: http://localhost:5173
 # PostgreSQL: localhost:5432
 ```
 
 ## 🌿 Funcionalidades
 
-### ✅ Gestión de Plantas
+### ✅ Gestión de catalogo de especies de Plantas
 - Inventario completo de especies
 - Clasificación por estratos y funciones ecológicas
-- Etapas sucesionales según Ernst Götsch
-- Lista de plantas deseadas
+- Etapas sucesionales
+- Lista de plantas
 
-### ✅ Ubicaciones y Lechos
-- Organización por zonas/áreas
-- Lechos lineales, islas y gremios
-- Cálculo automático de áreas
-- Tipos de suelo y modalidades de plantación
+### ✅ Sitios y lugares de plantación
+- Creación de sitios(espacios) y plantaciones    -- En construcción
 
-### ✅ Planificación de Plantaciones
-- Vinculación plantas-lechos
-- Estados del ciclo de vida
+### ✅ Diseño de parcelas sintrópicas para las zonas de plantación
+- Vinculación especies a la parcela 
+- Dispocición de cada especie según tipo de parcela.
 - Cálculo de densidades
 - Seguimiento temporal
 
@@ -99,24 +103,25 @@ Para testing, usar estos tokens en el header `Authorization: Bearer <token>`:
 ## 📡 API Endpoints
 
 ### Públicos (sin autenticación)
-- `GET /api/v1/plantas` - Listar plantas
-- `GET /api/v1/locations` - Listar ubicaciones
-- `GET /api/v1/beds` - Listar lechos
-- `GET /api/v1/plantings` - Listar plantaciones
-- `GET /api/v1/constants` - Constantes del sistema
+- `GET /api/v1/plantas` - Listar plantas (público)
+- `GET /api/v1/plantas/:id` - Obtener planta (público)
+- `GET /api/v1/sites` - Listar sitios (público)
+- `GET /api/v1/plantations` - Listar plantaciones (público)
+- `GET /api/v1/plots` - Listar parcelas sintrópicas (público)
 
 ### Protegidos (requieren autenticación)
-- `POST /api/v1/plantas` - Crear planta
-- `PUT /api/v1/plantas/:id` - Actualizar planta
-- `DELETE /api/v1/plantas/:id` - Eliminar planta
+- `POST /api/v1/plantas` - Crear planta (requiere auth)
+- `POST /api/v1/sites` - Crear sitio (requiere auth)
+- `POST /api/v1/plantations` - Crear plantacion (requiere auth)
 - Y más...
 
 ## 🛠️ Stack Tecnológico
 
 ### Backend
-- **Go 1.21** - Lenguaje principal
+- **Go 1.24** - Lenguaje principal
 - **Gin** - Framework web
-- **PostgreSQL** - Base de datos (próximamente)
+- **PostgreSQL** - Base de datos 
+- **Gorm** - ORM
 - **JWT** - Autenticación (próximamente)
 
 ### Frontend
@@ -128,7 +133,7 @@ Para testing, usar estos tokens en el header `Authorization: Bearer <token>`:
 
 ## 🌍 Principios de Agricultura Sintrópica
 
-Este sistema está basado en los principios de **Ernst Götsch**:
+Este sistema está basado en los principios de bosques sintrópicos:
 
 - **Estratificación**: 7 estratos de vegetación
 - **Sucesión**: 4 etapas sucesionales

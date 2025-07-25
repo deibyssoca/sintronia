@@ -27,15 +27,6 @@ func NewPlantRepository() *PlantRepository {
 
 // Create crea una nueva planta
 func (r *PlantRepository) Create(plant *models.PlantSpecies) error {
-
-	if plant == nil {
-		panic("*************    PROBANDO ERROR VIENE NILL plant    ************")
-	}
-
-	if r.db == nil {
-		panic("*************    PROBANDO ERROR VIENE NILL r.db    ************")
-	}
-
 	if err := r.db.Create(plant).Error; err != nil {
 		return fmt.Errorf("error creando planta: %w", err)
 	}

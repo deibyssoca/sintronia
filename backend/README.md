@@ -1,4 +1,4 @@
-# Sintropia Backend API
+# Sintronia Backend API
 
 API REST para el sistema de agricultura sintrópica desarrollada en Go con Gin.
 
@@ -12,35 +12,48 @@ go mod tidy
 go run cmd/api/main.go
 
 # Compilar
-go build -o bin/sintropia-api cmd/api/main.go
+go build -o bin/sintronia-api cmd/api/main.go
 ```
 
 ## 📡 Endpoints
 
-### Plantas
+### Especies de Plantas
 - `GET /api/v1/plantas` - Listar plantas (público)
 - `POST /api/v1/plantas` - Crear planta (requiere auth)
 - `GET /api/v1/plantas/:id` - Obtener planta (público)
 - `PUT /api/v1/plantas/:id` - Actualizar planta (requiere auth)
 - `DELETE /api/v1/plantas/:id` - Eliminar planta (requiere auth)
 
-### Ubicaciones
-- `GET /api/v1/locations` - Listar ubicaciones (público)
-- `POST /api/v1/locations` - Crear ubicación (requiere auth)
-- `GET /api/v1/locations/:id` - Obtener ubicación (público)
-- `DELETE /api/v1/locations/:id` - Eliminar ubicación (requiere auth)
-
-### Lechos
-- `GET /api/v1/beds` - Listar lechos (público)
-- `POST /api/v1/beds` - Crear lecho (requiere auth)
-- `GET /api/v1/beds/:id` - Obtener lecho (público)
-- `DELETE /api/v1/beds/:id` - Eliminar lecho (requiere auth)
+### Sitios
+- `GET /api/v1/sites` - Listar sitios (público)
+- `POST /api/v1/sites` - Crear sitio (requiere auth)
+- `GET /api/v1/sites/:id` - Obtener sitio (público)
+- `DELETE /api/v1/sites/:id` - Eliminar sitio (requiere auth)
 
 ### Plantaciones
-- `GET /api/v1/plantings` - Listar plantaciones (público)
-- `POST /api/v1/plantings` - Crear plantación (requiere auth)
-- `PATCH /api/v1/plantings/:id/status` - Actualizar estado (requiere auth)
-- `DELETE /api/v1/plantings/:id` - Eliminar plantación (requiere auth)
+- `GET /api/v1/plantations` - Listar plantaciones (público)
+- `POST /api/v1/plantations` - Crear plantacion (requiere auth)
+- `GET /api/v1/plantations/:id` - Obtener plantacion (público)
+- `DELETE /api/v1/plantations/:id` - Eliminar plantacion (requiere auth)
+
+### Parcelas sintrópicas
+- `GET /api/v1/plots` - Listar parcelas sintrópicas (público)
+- `POST /api/v1/plots` - Crear parcela sintrópica (requiere auth)
+- `PATCH /api/v1/plots/:id/status` - Actualizar estado (requiere auth)
+- `DELETE /api/v1/plots/:id` - Eliminar parcela sintrópica (requiere auth)
+
+### Instancias de plantas
+- `GET /api/v1/plant_instances` - Listar instancias de plantas (público)
+- `POST /api/v1/plant_instances` - Crear instancia de planta (requiere auth)
+- `GET /api/v1/plant_instances/:id` - Obtener instancia de planta (público)
+- `PUT /api/v1/plant_instances/:id` - Actualizar instancia de planta (requiere auth)
+- `DELETE /api/v1/plant_instances/:id` - Eliminar instancia de planta (requiere auth)
+
+### Plantillas
+- `GET /api/v1/suggestion_templates` - Listar plantillas (público)
+- `POST /api/v1/suggestion_templates` - Crear plantilla (requiere auth)
+- `PATCH /api/v1/suggestion_templates/:id/status` - Actualizar plantilla (requiere auth)
+- `DELETE /api/v1/suggestion_templates/:id` - Eliminar plantilla (requiere auth)
 
 ### Utilidades
 - `GET /api/v1/constants` - Obtener constantes del sistema
@@ -64,11 +77,16 @@ Tokens válidos para testing:
 backend/
 ├── cmd/api/          # Punto de entrada
 ├── internal/         # Código interno
+│   ├── db/           # Conexión a la BD
 │   ├── handlers/     # Controladores HTTP
 │   ├── middleware/   # Middleware personalizado
+│   ├── repositories/ # Repos
 │   └── routes/       # Configuración de rutas
-└── pkg/             # Código reutilizable
-    └── models/      # Modelos de datos
+├── migrations/       # Código reutilizable
+├── pkg/              # Código reutilizable
+│    └── models/      # Modelos de datos
+docs/                 # Documentos
+
 ```
 
 ## 🌱 Variables de Entorno
