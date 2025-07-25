@@ -115,6 +115,11 @@ Para testing, usar estos tokens en el header `Authorization: Bearer <token>`:
 - `POST /api/v1/plantations` - Crear plantacion (requiere auth)
 - Y más...
 
+###  [Ver esquema de base de datos](docs/database-schema-v2.md)
+
+
+###  [Ver diagrama de flujo en Mermaid](docs/mermaid-diagram.md)
+
 ## 🛠️ Stack Tecnológico
 
 ### Backend
